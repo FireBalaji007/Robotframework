@@ -14,9 +14,9 @@ Library           Selenium2Library
 Test
     [Setup]
     [Timeout]
-    SleepTime    123
-    Comment    #Msx_Portal_Login
-    Comment    MsxPortal_Login    ${Msx_URL}    ${Msx_uname}    ${Msx_pwd}
+    #Msx_Portal_Login
+    MsxPortal_Login_v2    ${Msx_URL}    ${Msx_uname}    ${Msx_pwd}
+    sleep    120s
     Comment    #Setup_Infra
     Comment    MsxPortal_CreateInfra
     Comment    #Delete_Infra
@@ -24,8 +24,8 @@ Test
     Comment    #Unsubscribe_infra
     Comment    MsxPortal_Unsubscribe
     Comment    #Msx_Portal_Logout
-    Comment    MsxPortal_Logout    False
-    Comment    #Validate_MsxPortal_Header
+    MsxPortal_Logout_v2    False
+    #Validate_MsxPortal_Header
     Comment    Log to console    *** Msx Portal Header Check ***\n
     Comment    Log    \n***// Validate Msx Portal Header //***\n
     Comment    ${homepg_Hdr}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.ng-scope > div > div > msx-masthead > div > div > div > div.sk-masthead-flex > span.sk-masthead-title-area > span    120s
@@ -152,6 +152,17 @@ SubscribeOffer_TC
     MsxPortal_Logout
     [Teardown]
 
+BillingDetails_TC
+    [Setup]
+    [Timeout]
+    #Msx_Portal_Login
+    MsxPortal_Login    ${Msx_URL}    ${Msx_uname}    ${Msx_pwd}
+    #Billing_Details
+    MsxPortal_Billing    3 Years
+    #Msx_Portal_Logout
+    MsxPortal_Logout
+    [Teardown]
+
 CreateInfra_TC
     [Setup]
     [Timeout]
@@ -192,9 +203,11 @@ Suite_setup
     Log To Console    \n *** Msx Portal variables *** \n
     Log    \n ***// Declaring the variables for Msx portal //*** \n
     Set Global Variable    ${Msx_URL}    https://sdwanaas.qa.ciscomsx.com/
-    Set Global Variable    ${Msx_uname}    rvinayag
+    Set Global Variable    ${Msx_uname}    ssalemar
     Set Global Variable    ${Msx_pwd}    Viptela1!
     Set Global Variable    ${screenshotDir}    C:/Data/Robot/Run_Logs/Screenshots
+    Set Global Variable    ${selectorPath}    C:/Data/Robot/Msx_Code
+    MsxPortal_Selectors
 
 Suite_Teardown
     Log To Console    \n*** Teardown of \ Suite setup***\n
@@ -423,6 +436,11 @@ MsxPortal_Offercatalog
     ${paymentoptSelect}=    Execute Javascript    var listinfo = document.querySelectorAll('sdwan-as-subscription > div > div > div:nth-child(4) > div:nth-child(3) > msx-form > form > div > ng-component > msx-combo-dropdown > div.vms-combo-dropdown > ul.vms-combo-dropdown-menu > li.vms-combo-dropdown-menu-list-wrapper > ul > li'); var len = listinfo.length; for(i=1; i<len+1; i++){ \    var txt = \ document.querySelectorAll("sdwan-as-subscription > div > div > div:nth-child(4) > div:nth-child(3) > msx-form > form > div > ng-component > msx-combo-dropdown > div.vms-combo-dropdown > ul.vms-combo-dropdown-menu > li.vms-combo-dropdown-menu-list-wrapper > ul > li:nth-child("+ i +")")[0].innerText; \    if(txt == "${paymentTerms}"){ \    \    var click = document.querySelectorAll("sdwan-as-subscription > div > div > div:nth-child(4) > div:nth-child(3) > msx-form > form > div > ng-component > msx-combo-dropdown > div.vms-combo-dropdown > ul.vms-combo-dropdown-menu > li.vms-combo-dropdown-menu-list-wrapper > ul > li:nth-child("+ i +")")[0].click(); \    \    break; \    } } return txt;
     Log    ${paymentoptSelect}
     sleep    3s
+    ${totalAmt}=    Get Text    css=msx-offer-catalog-workspace > div.page-selected-offer-section > div > div.msx-supplimental-form > sdwan-as-subscription > div > div > div:nth-child(6) > div > div:nth-child(2)
+    Log    ${totalAmt}
+    Log    \n***// Validate the total amount and its term of subscription \ //***\n
+    Run Keyword And Continue On Failure    Should Not Contain    ${totalAmt}    $0    ignore_case=True    msg=Check amount doesn't starts with zero dollar
+    Run Keyword And Continue On Failure    Should Contain    ${totalAmt}    ${paymentTerms}    ignore_case=True    msg=Check subscribed years getting reflected in total amount
     #Subscription
     Log to console    *** Subscribe after selecting preferred plan ***\n
     Log    \n***// Subscribe finally after selecting service model and payment terms //***\n
@@ -464,6 +482,8 @@ MsxPortal_DeleteInfra
     ...    iv) \ Logout of Msx portal.
     ${rdmValue}=    Evaluate    random.randint(1,100)    random
     Log    ${rdmValue}
+    ${range}=    Evaluate    range(0,6)
+    Log    ${range}
     #Validate_MsxPortal_Header
     Log to console    *** Msx Portal Header Check ***\n
     Log    \n***// Validate Msx Portal Header //***\n
@@ -481,12 +501,12 @@ MsxPortal_DeleteInfra
     Run Keyword And Continue On Failure    Should Be Equal    ${setupInfraHdrTxt}    SD-WAN    msg=Check setup Infra header text    ignore_case=True
     Log to console    *** Delete Infrastructure from Services ***\n
     Log    \n***// Delete the existing infrastructure from Services tab //***\n
-    ${infradeploySt}=    Run Keyword And Return Status    Page Should Contain Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-as-setup > div > msx-step-flow-panel > div > div > button
+    ${infradeploySt}=    Run Keyword And Return Status    Page Should Contain Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
     Run keyword if    '${infradeploySt}'=='False'    Click Element    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
-    Run Keyword And Continue On Failure    Page Should Contain Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-as-setup > div > msx-step-flow-panel > div > div > button
-    ${infraCompletionTxt}=    Get Text    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-as-setup > div > msx-step-flow-panel > div > div > button
+    Run Keyword And Continue On Failure    Page Should Contain Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
+    ${infraCompletionTxt}=    Get Text    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
     Log    ${infraCompletionTxt}
-    Run Keyword And Continue On Failure    Should Be Equal    ${infraCompletionTxt}    Done    msg=Check Infra button status after completion    ignore_case=True
+    Run Keyword And Continue On Failure    Should Be Equal    ${infraCompletionTxt}    SD-WAN PORTAL    msg=Check Infra button status after completion    ignore_case=True
     #Actions_Dropdown
     Log    \n***// Scroll subscribed infrastructure into view //***\n
     Run Keyword And Ignore Error    Execute Javascript    window.scrollTo(0,290);
@@ -533,6 +553,19 @@ MsxPortal_DeleteInfra
     Log    ${deletingsvcTxt}
     Run keyword and ignore error    Capture Element Screenshot    css=#deleteServiceInfra > div.step-flow-step-content > div.step-flow-section-description
     Run Keyword And Continue On Failure    Should Contain    ${deletingsvcTxt}    Remaining    msg=Chk service deletion progress text    ignore_case=True
+    #Check the Progress of Infra Deletion
+    Log To Console    *** Check Infrastructure deletion status ***\n
+    Log    \n***// Validate the progress of Infra deletion \ //*** \n
+    FOR    ${i}    IN    @{range}
+        Log To Console    *** Check Infra deletion progress in Loop::${i} ***\n
+        Log    \n***// Infra deletion progress check in Loop::${i} //*** \n
+        ${CompletionSt}=    Run keyword and return status    Element Should Not Be Visible    css=#deleteServiceInfra > div.step-flow-section-ball-zone > div:nth-child(2) > msx-busy-indicator
+        Log    ${CompletionSt}
+        ${remainingTxt}=    Run keyword if    '${CompletionSt}'=='False'    Get Text    css=#deleteServiceInfra > div.step-flow-step-content > div.step-flow-section-description
+        Log    ${remainingTxt}
+        Run keyword if    '${CompletionSt}'=='False'    SleepTime    360
+        Exit for loop if    '${CompletionSt}'=='True'
+    END
     [Teardown]
 
 MsxPortal_CreateInfra
@@ -545,6 +578,8 @@ MsxPortal_CreateInfra
     ...    \ iv) \ Logout of Msx portal.
     ${rdmValue}=    Evaluate    random.randint(1,100)    random
     Log    ${rdmValue}
+    ${range}=    Evaluate    range(0,12)
+    Log    ${range}
     #Validate_MsxPortal_Header
     Log to console    *** Msx Portal Header Check ***\n
     Log    \n***// Validate Msx Portal Header //***\n
@@ -609,6 +644,19 @@ MsxPortal_CreateInfra
     Log    ${setupsvcTxt}
     Run keyword and ignore error    Capture Element Screenshot    css=#serviceInfra > div.step-flow-step-content > div.step-flow-section-description
     Run Keyword And Continue On Failure    Should Contain    ${setupsvcTxt}    Remaining    msg=Service setup Progress text    ignore_case=True
+    #Check the Progress of Create Infra
+    Log To Console    *** Check Infrastructure creation status ***\n
+    Log    \n***// Validate the progress of Infra creation \ //*** \n
+    FOR    ${i}    IN    @{range}
+        Log To Console    *** Check Infra creation progress in Loop::${i} ***\n
+        Log    \n***// Infra creation progress check in Loop::${i} //*** \n
+        ${CompletionSt}=    Run keyword and return status    Element Should Not Be Visible    css=#serviceInfra > div.step-flow-section-ball-zone > div:nth-child(2) > msx-busy-indicator
+        Log    ${CompletionSt}
+        ${remainingTxt}=    Run keyword if    '${CompletionSt}'=='False'    Get Text    css=#serviceInfra > div.step-flow-step-content > div.step-flow-section-description
+        Log    ${remainingTxt}
+        Run keyword if    '${CompletionSt}'=='False'    SleepTime    360
+        Exit for loop if    '${CompletionSt}'=='True'
+    END
     [Teardown]
 
 MsxPortal_Unsubscribe
@@ -711,16 +759,212 @@ SleepTime
     [Arguments]    ${tmSecs}
     Log    ${tmSecs}
     ${seconds}=    Convert To Integer    ${tmSecs}
-    Log To Console    *** Initiating Sleep Time ***\n
     Log    \n***// Converting sleep seconds to minutes //***\n
     ${time}=    Evaluate    ${seconds}//60
     ${leftoutTm}=    Set Variable    ${time}
+    Log To Console    *** Initiating Sleep Time for ${time} mins ***\n
     FOR    ${i}    IN RANGE    0    ${time}
         ${count}=    Evaluate    ${i}+1
-        Log To Console    *** Total_Loop:${time}, Current_Loop:${count}, Sleeping for 60seconds ***\n
+        Log To Console    *** Sleep_count:${time}, Current_sleep:${count}, Sleeping for 60seconds ***\n
         Log    \n***// Sleeping for 60seconds //***\n
         sleep    60s
         ${leftoutTm}=    Evaluate    ${leftoutTm} - 1
         Log To Console    *** Remaining Sleeptime::${leftoutTm} ***\n
         Log    Remaining loop for sleep time is ${leftoutTm}
     END
+
+MsxPortal_Billing
+    [Arguments]    ${paymentTerms}=mo
+    [Documentation]    \ [*** Unsubscribe the offer in Service tab of Msx_Portal ***]
+    ...
+    ...    \ i) \ Login to Msx portal
+    ...
+    ...    ii) \ By default it should display service tab,incase of subscribed user account.
+    ...
+    ...    iii) \ On successful login, unsubscribe existing subscription from service tab.
+    ...
+    ...    iv) \ Logout of Msx portal.
+    ...    \ \
+    ${rdmValue}=    Evaluate    random.randint(1,100)    random
+    Log    ${rdmValue}
+    ${range}=    Evaluate    range(0,20)
+    Log    ${range}
+    ${terms}=    Run keyword if    '${paymentTerms}'=='3 Years'    Set Variable    3 yrs
+    ...    ELSE    Set Variable If    '${paymentTerms}'=='1 Year'    1 yr    mo
+    Log    ${terms}
+    #Validate_MsxPortal_Header
+    Log to console    *** Msx Portal Header Check ***\n
+    Log    \n***// Validate Msx Portal Header //***\n
+    ${homepg_Hdr}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.ng-scope > div > div > msx-masthead > div > div > div > div.sk-masthead-flex > span.sk-masthead-title-area > span    120s
+    Log    ${homepg_Hdr}
+    Maximize Browser Window
+    sleep    2s
+    Comment    #click_slide_menu_Items
+    Comment    Log    \n***// Check and click Tenant Workspace Items //***\n
+    Comment    ${menuItemsSt}=    Run keyword and return status    Page Should Contain Element    css=msx-slide-menu > div > div.slide-menu-content-wrapper > div > div:nth-child(1) > div > div.slide-menu-item-row > div.slide-menu-item-icon
+    Comment    Log    ${menuItemsSt}
+    Comment    Run Keyword if    '${menuItemsSt}'=='True'    Click Element    css=msx-slide-menu > div > div.slide-menu-content-wrapper > div > div:nth-child(1) > div > div.slide-menu-item-row > div.slide-menu-item-icon
+    #Switch_to_Billing
+    Log to console    *** Switch to Billing tab in Msx Portal ***\n
+    Log    \n***// Switch to Billing page //***\n
+    ${billingtabSt}=    Run Keyword And Return Status    Page Should Contain Element    css=#vms_tenant_workspace_billing
+    Log    ${billingtabSt}
+    Run keyword if    '${billingtabSt}'=='True'    Click Element    css=#vms_tenant_workspace_billing
+    sleep    3s
+    Run keyword and ignore error    Capture Page Screenshot    ${screenshotDir}/BillingDetails_${rdmValue}.png
+    ${billinghdrSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=msx-billing-workspace > div.tenant-workspace-header > msx-title-toolbar > div.msx-title-toolbar-title    120s
+    Log    ${billinghdrSt}
+    ${billinghdrTxt}=    Get Text    css=msx-billing-workspace > div.tenant-workspace-header > msx-title-toolbar > div.msx-title-toolbar-title
+    Log    ${billinghdrTxt}
+    Run keyword and continue on failure    Should contain    ${billinghdrTxt}    Billing    ignore_case=True    msg=Billing header check
+    ${billingdetailSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=table > tr > td > msx-subscription-billing-list-row-item > div    120s
+    Log    ${billingdetailSt}
+    ${billingdetailhdrTxt}=    Get Text    css=table > tr > td > msx-subscription-billing-list-row-item > div
+    Log    ${billingdetailhdrTxt}
+    Run keyword and continue on failure    Should contain    ${billingdetailhdrTxt}    SD-WAN    ignore_case=True    msg=Billing details table header
+    ${billinginfoSt}=    Run Keyword And Return Status    Page Should Contain Element    css=table > tr > td > msx-subscription-billing-list-row-item > div > div:nth-child(3)
+    Log    ${billinginfoSt}
+    ${billinginfoTxt}=    Run keyword if    '${billinginfoSt}'=='True'    Get Text    css=table > tr > td > msx-subscription-billing-list-row-item > div > div:nth-child(3)
+    Log    ${billinginfoTxt}
+    ${splitInfo}=    Split String    ${billinginfoTxt}    \n
+    Log    ${splitInfo}
+    ${removeVal}=    Remove Values From List    ${splitInfo}    $    .    /
+    Log    ${splitInfo}
+    ${subscribedPrice}=    set variable    ${splitInfo[0]}
+    Log    ${subscribedPrice}
+    ${subscribedTerms}=    set variable    ${splitInfo[-1]}
+    Log    ${subscribedTerms}
+    Run Keyword And Continue On Failure    Should Not Start With    ${subscribedPrice}    0    msg=Subscribed price should not be "Zero"
+    Run Keyword And Continue On Failure    should be equal    ${subscribedTerms}    ${terms}    ignore_case=True
+    [Teardown]
+
+Get_Selectors
+    [Arguments]    ${whichSelector}    ${num}=1
+    Log    ${whichSelector}
+    @{cssPath}=    Create List
+    ${fileInfo}=    Set Variable    findstr ${whichSelector} ${selectorPath}/Msx_selectors.txt
+    ${findValue}=    OperatingSystem.Run    ${fileInfo}
+    Log    ${findValue}
+    @{path}=    Split To Lines    ${findValue}
+    ${length}=    Evaluate    len(@{path})
+    ${num}=    Evaluate    int(${num})
+    FOR    ${i}    IN RANGE    0    ${num}
+        ${j}    Evaluate    ${i} + 1
+        @{content}=    Split String    @{path}[${i}]    separator=/${j}/
+        Log    @{content}[1]
+        Append To List    ${cssPath}    @{content}[1]
+    END
+    Log    ${cssPath}
+    ${cssSelector}=    set variable    ${cssPath[0]}
+    [Return]    ${cssSelector}
+
+MsxPortal_Selectors
+    ${busyIndCss}    Get_Selectors    Busyindicator
+    Set Global Variable    ${busyindicatorCss}    ${busyIndCss}
+    #Login_Page
+    ${loginpgHdrCss}    Get_Selectors    LoginpageHdr
+    Set Global Variable    ${loginpghdrCss}    ${loginpgHdrCss}
+    ${loginpgLogoCss}    Get_Selectors    LoginpageLogo
+    Set Global Variable    ${loginpglogoCss}    ${loginpgLogoCss}
+    ${loginUsrCss}    Get_Selectors    LoginusrName
+    Set Global Variable    ${loginusrCss}    ${loginUsrCss}
+    ${loginPwdCss}    Get_Selectors    LoginPwd
+    Set Global Variable    ${loginpwdCss}    ${loginPwdCss}
+    ${loginBtnCss}    Get_Selectors    Loginbtn
+    Set Global Variable    ${loginbtnCss}    ${loginBtnCss}
+    ${tenantMenuCss}    Get_Selectors    Tenantmenuitems
+    Set Global Variable    ${tenantmenuCss}    ${tenantMenuCss}
+    #Logout
+    ${userLogoCss}    Get_Selectors    LocaluserHdr
+    Set Global Variable    ${userlogoCss}    ${userLogoCss}
+    ${logoutIconCss}    Get_Selectors    LogoutIcon
+    Set Global Variable    ${logouticonCss}    ${logoutIconCss}
+    #Services
+    ${serviceTabCss}    Get_Selectors    serviceTab
+    Set Global Variable    ${servicetabCss}    ${serviceTabCss}
+
+MsxPortal_Login_v2
+    [Arguments]    ${url}=${Msx_URL}    ${uname}=${Msx_uname}    ${pwd}=${Msx_pwd}    # Declare Msx_Portal URL, Username and its Password for logging in
+    Log Many    ${url}    ${uname}    ${pwd}
+    ${rdmValue}=    Evaluate    random.randint(1,100)    random
+    Log    ${rdmValue}
+    ${screenshotVar}=    Set Variable    Msx_Portal_Login_screenshot
+    Log    ${screenshotVar}
+    ${screenshotName}=    Evaluate    str($screenshotVar)+'_'+str($rdmValue)
+    Log    ${screenshotName}
+    ${LogoScreenshot}=    Evaluate    'Logo'+'_'+str($rdmValue)
+    Log    ${LogoScreenshot}
+    Log to console    *** Login Msx Portal ***\n
+    Log    \n***// Validate Msx Portal Login //***\n
+    ${browser_id}=    Open Browser    ${url}    browser=ff
+    log    ${browser_id}
+    Sleep    10s
+    ${loadingStatus}=    Run Keyword And Return Status    Wait Until Element Is Not Visible    ${busyindicatorCss}
+    Log    ${loadingStatus}
+    Run keyword if    '${loadingStatus}'=='False'    Sleep    6s
+    ${loginpageSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    ${loginpghdrCss}
+    Log    ${loginpageSt}
+    Capture Page Screenshot    ${screenshotDir}/${screenshotName}.png
+    Should Be True    ${loginpageSt}
+    Sleep    3s
+    ${getportalTxt}=    Get Text    ${loginpghdrCss}
+    Log    ${getportalTxt}
+    Run Keyword And Continue On Failure    should be equal    ${getportalTxt}    Managed Services Accelerator    ignore_case=True
+    Sleep    3s
+    ${logoChk}=    Run Keyword And Return Status    Wait Until Page Contains Element    ${loginpglogoCss}
+    Run Keyword And Continue On Failure    Should Be True    ${logoChk}
+    ${logoName}=    Execute Javascript    var name = document.querySelectorAll('#auth-contents > div > div.auth-logo-wrapper > div')[0].className; \    return name;
+    Log    ${logoName}
+    Run keyword and ignore error    Capture Element Screenshot    ${loginpglogoCss}    ${screenshotDir}/${LogoScreenshot}.png
+    Run Keyword And Continue On Failure    Should Contain    ${logoName}    cisco    ignore_case=True
+    #Input_userName
+    ${UnameSt}=    Run keyword and return status    Page Should Contain Element    ${loginusrCss}
+    Log    ${UnameSt}
+    Run keyword if    '${UnameSt}'=='True'    Input Text    ${loginusrCss}    ${uname}
+    sleep    2s
+    #Input_password
+    ${pwdSt}=    Run keyword and return status    Page Should Contain Element    ${loginpwdCss}
+    Log    ${pwdSt}
+    Run keyword if    '${pwdSt}'=='True'    Input Password    ${loginpwdCss}    ${pwd}
+    sleep    2s
+    #Click_signin
+    ${disableBtnChk}=    Execute Javascript    var flag = document.querySelectorAll('#__login-view-submit-button')[0].disabled; return flag;
+    Log    ${disableBtnChk}
+    Run keyword if    '${disableBtnChk}'=='False'    Run keyword and return status    Click Element    ${loginbtnCss}
+    sleep    10s
+    FOR    ${i}    IN RANGE    0    3
+        ${st}=    Run keyword and return status    Element Should Not Be Visible    ${busyindicatorCss}
+        Log    ${st}
+        Exit for loop if    '${st}'=='True'
+        sleep    10s
+    END
+
+MsxPortal_Logout_v2
+    [Arguments]    ${flag}=False
+    #Logout
+    #switch_to_Services
+    Log to console    *** Switch to Services in Msx Portal ***\n
+    #click_slide_menu_Items
+    Log    \n***// Check and click Tenant Workspace Items //***\n
+    ${menuItemsSt}=    Run keyword and return status    Page Should Contain Element    ${tenantmenuCss}
+    Log    ${menuItemsSt}
+    Run Keyword if    '${menuItemsSt}'=='True' and '${flag}'=='True'    Click Element    ${tenantmenuCss}
+    Log    \n***// Switch to services page before logout //***\n
+    Run keyword if    '${flag}'=='True'    Click Element    ${servicetabCss}
+    sleep    3s
+    Run keyword and ignore error    Execute Javascript    window.scrollTo(0,0)
+    sleep    2s
+    Log to console    *** Logout of Msx_Portal ***\n
+    Comment    Log    \n***// Switch Msx Portal HomePage //***\n
+    Comment    Run keyword and continue on failure    Click Element    ${servicetabCss}
+    Log to console    *** Click user settings for Logout ***\n
+    Log    \n***// Click user settings options for Logging out //***\n
+    ${userprofileSt}=    Run Keyword And Return Status    Page Should Contain Element    ${userlogoCss}
+    Log    ${userprofileSt}
+    Run keyword if    '${userprofileSt}'=='True'    Click Element    ${userlogoCss}
+    sleep    2s
+    Log    \n***// Check and click the Logout element in user settings //***\n
+    ${logoutbtnSt}=    Run Keyword And Return Status    Page Should Contain Element    ${logouticonCss}
+    Run keyword if    '${logoutbtnSt}'=='True'    Click Element    ${logouticonCss}
+    sleep    3s
+    [Teardown]    Selenium2Library.Close Browser

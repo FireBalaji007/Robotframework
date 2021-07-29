@@ -1,0 +1,48 @@
+Msx_Portal_Selectors_file:
+
+#Common Selectors:
+#==================
+
+Busyindicator/s1/1/css=msx-busy-indicator > svg
+
+Tenantmenuitems/s1/1/css=msx-slide-menu > div > div.slide-menu-content-wrapper > div > div:nth-child(1) > div > div.slide-menu-item-row > div.slide-menu-item-icon
+
+
+
+
+##################
+#Msx_Portal_Login#
+##################
+
+LoginpageHdr/s2/1/css=#auth-contents > div > h1
+
+LoginpageLogo/s3/1/css=#auth-contents > div > div.auth-logo-wrapper > div
+
+LoginusrName/s4/1/css=#username
+
+LoginPwd/s5/1/css=#password
+
+Loginbtn/s6/1/css=#__login-view-submit-button
+
+
+##################
+#Msx_Portal_Logout#
+##################
+
+LocaluserHdr/s2/1/css=msx-masthead > div > div > div > div.sk-masthead-flex > span.sk-masthead-actions-area > div > span
+
+LogoutIcon/s2/1/css=#logout_menu_item
+
+
+#==================
+#Msx_Portal_Service
+#==================
+
+
+serviceTab/s7/1/css=#vms_tenant_workspace_services
+
+
+
+
+
+
