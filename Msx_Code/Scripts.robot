@@ -12,20 +12,22 @@ Library           Selenium2Library
 
 *** Test Cases ***
 Test
+    [Tags]    Test
     [Setup]
+    [Template]    Test
     [Timeout]
+    Comment    ${DeviceRange}=    Evaluate    list(range(1,500))
+    Comment    Log    ${DeviceRange}
     #Msx_Portal_Login
     MsxPortal_Login_v2    ${Msx_URL}    ${Msx_uname}    ${Msx_pwd}
-    sleep    120s
-    Comment    #Setup_Infra
-    Comment    MsxPortal_CreateInfra
-    Comment    #Delete_Infra
-    Comment    MsxPortal_DeleteInfra
-    Comment    #Unsubscribe_infra
-    Comment    MsxPortal_Unsubscribe
-    Comment    #Msx_Portal_Logout
-    MsxPortal_Logout_v2    False
-    #Validate_MsxPortal_Header
+    sleep    20s
+    #Msx_Portal_Devices
+    MsxPortal_Devices
+    #Msx_Portal_Logout
+    MsxPortal_Logout_v2    True
+    Comment    ${dict}=    Create Dictionary    Groups    basic_naas    Username    atisjain
+    Comment    Log many    ${dict}[Groups]    ${dict}[Username]
+    Comment    #Validate_MsxPortal_Header
     Comment    Log to console    *** Msx Portal Header Check ***\n
     Comment    Log    \n***// Validate Msx Portal Header //***\n
     Comment    ${homepg_Hdr}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.ng-scope > div > div > msx-masthead > div > div > div > div.sk-masthead-flex > span.sk-masthead-title-area > span    120s
@@ -139,7 +141,6 @@ Test
     Comment    Run keyword if    '${logoutbtnSt}'=='True'    Click Element    css=#logout_menu_item
     Comment    sleep    3s
     Comment    Close Browser
-    [Teardown]
 
 SubscribeOffer_TC
     [Setup]
@@ -196,6 +197,22 @@ UnsubscribeOffer_TC
     MsxPortal_Logout
     [Teardown]
 
+ValidateDeviceCount_vManage_TC
+    [Setup]
+    [Timeout]
+    #Msx_Portal_Login
+    MsxPortal_Login    ${Msx_URL}    ${Msx_uname}    ${Msx_pwd}
+    #Get_MsxPortal_DeviceCount
+    ${MsxdevCount}=    MsxPortal_GetdevicesCount
+    Log    ${MsxdevCount}
+    #vManage_redirect
+    ${vManagdevcount}=    MsxPortal_vManageGetdevCount
+    Log    ${vManagdevcount}
+    Run Keyword And Continue On Failure    Should Be Equal    ${MsxdevCount}    ${vManagdevcount}
+    #Msx_Portal_Logout
+    MsxPortal_Logout
+    [Teardown]
+
 *** Keywords ***
 Suite_setup
     Log To Console    \n *** Create Suite Setup *** \n
@@ -203,7 +220,7 @@ Suite_setup
     Log To Console    \n *** Msx Portal variables *** \n
     Log    \n ***// Declaring the variables for Msx portal //*** \n
     Set Global Variable    ${Msx_URL}    https://sdwanaas.qa.ciscomsx.com/
-    Set Global Variable    ${Msx_uname}    ssalemar
+    Set Global Variable    ${Msx_uname}    vlingamp
     Set Global Variable    ${Msx_pwd}    Viptela1!
     Set Global Variable    ${screenshotDir}    C:/Data/Robot/Run_Logs/Screenshots
     Set Global Variable    ${selectorPath}    C:/Data/Robot/Msx_Code
@@ -240,7 +257,7 @@ MsxPortal_Login
     Sleep    3s
     ${getportalTxt}=    Get Text    css=#auth-contents > div > h1
     Log    ${getportalTxt}
-    Run Keyword And Continue On Failure    should be equal    ${getportalTxt}    Managed Services Accelerator    ignore_case=True
+    Run Keyword And Continue On Failure    should be equal    ${getportalTxt}    cisco plus    ignore_case=True
     Sleep    3s
     ${logoChk}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=#auth-contents > div > div.auth-logo-wrapper > div
     Run Keyword And Continue On Failure    Should Be True    ${logoChk}
@@ -286,8 +303,6 @@ MsxPortal_Logout
     Run keyword and ignore error    Execute Javascript    window.scrollTo(0,0)
     sleep    2s
     Log to console    *** Logout of Msx_Portal ***\n
-    Comment    Log    \n***// Switch Msx Portal HomePage //***\n
-    Comment    Run keyword and continue on failure    Click Element    css=#vms_tenant_workspace_services
     Log to console    *** Click user settings for Logout ***\n
     Log    \n***// Click user settings options for Logging out //***\n
     ${userprofileSt}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-masthead > div > div > div > div.sk-masthead-flex > span.sk-masthead-actions-area > div > span
@@ -566,6 +581,7 @@ MsxPortal_DeleteInfra
         Run keyword if    '${CompletionSt}'=='False'    SleepTime    360
         Exit for loop if    '${CompletionSt}'=='True'
     END
+    Run Keyword and continue on failure    Should Be True    ${CompletionSt}
     [Teardown]
 
 MsxPortal_CreateInfra
@@ -657,6 +673,7 @@ MsxPortal_CreateInfra
         Run keyword if    '${CompletionSt}'=='False'    SleepTime    360
         Exit for loop if    '${CompletionSt}'=='True'
     END
+    Run Keyword and continue on failure    Should Be True    ${CompletionSt}
     [Teardown]
 
 MsxPortal_Unsubscribe
@@ -753,6 +770,7 @@ MsxPortal_Unsubscribe
         Run keyword if    '${CompletionSt}'=='False'    SleepTime    180
         Exit for loop if    '${CompletionSt}'=='True'
     END
+    Run Keyword and continue on failure    Should Be True    ${CompletionSt}
     [Teardown]
 
 SleepTime
@@ -775,16 +793,6 @@ SleepTime
 
 MsxPortal_Billing
     [Arguments]    ${paymentTerms}=mo
-    [Documentation]    \ [*** Unsubscribe the offer in Service tab of Msx_Portal ***]
-    ...
-    ...    \ i) \ Login to Msx portal
-    ...
-    ...    ii) \ By default it should display service tab,incase of subscribed user account.
-    ...
-    ...    iii) \ On successful login, unsubscribe existing subscription from service tab.
-    ...
-    ...    iv) \ Logout of Msx portal.
-    ...    \ \
     ${rdmValue}=    Evaluate    random.randint(1,100)    random
     Log    ${rdmValue}
     ${range}=    Evaluate    range(0,20)
@@ -896,20 +904,25 @@ MsxPortal_Login_v2
     Log    ${LogoScreenshot}
     Log to console    *** Login Msx Portal ***\n
     Log    \n***// Validate Msx Portal Login //***\n
+    Comment    ${firefox_options}=    Evaluate    sys.modules['selenium.webdriver'].FirefoxOptions()    sys, selenium.webdriver
+    Comment    Call Method    ${firefox_options}    preferences    browser.link.open_newwindow    3
+    Comment    Sleep    2s
+    Comment    ${BrowserId}=    Selenium2Library.Create Webdriver    Firefox    options=${firefox_options}
+    Comment    ${preferences}=    Create Dictionary    browser.link.open_newwindow    3
     ${browser_id}=    Open Browser    ${url}    browser=ff
     log    ${browser_id}
     Sleep    10s
     ${loadingStatus}=    Run Keyword And Return Status    Wait Until Element Is Not Visible    ${busyindicatorCss}
     Log    ${loadingStatus}
     Run keyword if    '${loadingStatus}'=='False'    Sleep    6s
-    ${loginpageSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    ${loginpghdrCss}
+    ${loginpageSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    ${loginpghdrCss}    120s
     Log    ${loginpageSt}
     Capture Page Screenshot    ${screenshotDir}/${screenshotName}.png
     Should Be True    ${loginpageSt}
     Sleep    3s
     ${getportalTxt}=    Get Text    ${loginpghdrCss}
     Log    ${getportalTxt}
-    Run Keyword And Continue On Failure    should be equal    ${getportalTxt}    Managed Services Accelerator    ignore_case=True
+    Run Keyword And Continue On Failure    should be equal    ${getportalTxt}    cisco plus    ignore_case=True
     Sleep    3s
     ${logoChk}=    Run Keyword And Return Status    Wait Until Page Contains Element    ${loginpglogoCss}
     Run Keyword And Continue On Failure    Should Be True    ${logoChk}
@@ -968,3 +981,467 @@ MsxPortal_Logout_v2
     Run keyword if    '${logoutbtnSt}'=='True'    Click Element    ${logouticonCss}
     sleep    3s
     [Teardown]    Selenium2Library.Close Browser
+
+MsxPortal_vManageRedirect
+    [Arguments]    ${edgeDevCount}=1    ${ctrlUpcount}=1
+    [Documentation]    [*** vManage redirect from Msx Portal ***]
+    ...
+    ...     \ \ i) \ Login to Msx portal
+    ...    	\
+    ...     ii) Get SDWAN portal after setup infrastructure in Msx portal
+    ...    	\
+    ...    iii) Click SDWAN portal URL for getting redirected to vManage portal
+    ...    	\
+    ...    iv) Validate WAN Edge summary, Control up status and userprofile info in vManage portal
+    ...    	\
+    ...    v) Close vManage portal window and Logout of Msx portal.
+    ${rdmValue}=    Evaluate    random.randint(1,100)    random
+    Log    ${rdmValue}
+    ${range}=    Evaluate    range(0,12)
+    Log    ${range}
+    #Validate_MsxPortal_Header
+    Log to console    *** Msx Portal Header Check ***\n
+    Log    \n***// Validate Msx Portal Header //***\n
+    ${homepg_Hdr}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.ng-scope > div > div > msx-masthead > div > div > div > div.sk-masthead-flex > span.sk-masthead-title-area > span    120s
+    Log    ${homepg_Hdr}
+    Maximize Browser Window
+    sleep    2s
+    Run Keyword And Ignore Error    Execute Javascript    window.scrollTo(0,290);
+    sleep    2s
+    #Temp_Fix
+    Log    \n***// Fetch and Validate Setup Infra Header //***\n
+    ${setupInfra_St}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title    120s
+    Comment    ${setupInfra_St}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Log    ${setupInfra_St}
+    should be True    ${setupInfra_St}
+    ${setupInfraHdrTxt}=    Get Text    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Log    ${setupInfraHdrTxt}
+    Run Keyword And Continue On Failure    Should Be Equal    ${setupInfraHdrTxt}    SD-WAN    msg=Check setup Infra header text    ignore_case=True
+    Log to console    *** Check Infra Status ***\n
+    Log    \n***// Check Infra availability status in Services tab //***\n
+    ${infradeploySt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button    120s
+    Comment    ${infradeploySt}=    Run Keyword And Return Status    Page Should Contain Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
+    Run keyword if    '${infradeploySt}'=='False'    Click Element    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Run Keyword And Continue On Failure    Page Should Contain Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
+    ${infraCompletionTxt}=    Get Text    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
+    Log    ${infraCompletionTxt}
+    Log    \n***// Validate SDWAN portal availability in Msx before redirect //***\n
+    Run Keyword And Continue On Failure    Should Be Equal    ${infraCompletionTxt}    SD-WAN PORTAL    msg=Check SD-WAN Portal for redirecting to vManage    ignore_case=True
+    #Redirecting_to_vManage
+    Log to console    *** Redirect to vManage Portal ***\n
+    Log    \n***// Redirecting to vManage portal from Msx portal //***\n
+    Run keyword if    '${infradeploySt}'=='True'    Click Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
+    sleep    15s
+    Switch Window    New
+    ${vManagehdrSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.wrapper.ng-scope.page-content > div > div.ng-scope > nav > div > div.pull-right.navbar-right-block > div.pull-left > div > div > div#name_parent_child > div:nth-child(1)    120s
+    Log    ${vManagehdrSt}
+    Log    \n***// Fetch and Validate the header text of vManage portal //***\n
+    Run keyword unless    '${vManagehdrSt}'=='True'    Wait Until Page Contains Element    css=div.wrapper.ng-scope.page-content > div > div.ng-scope > nav > div > div.pull-right.navbar-right-block > div.pull-left > div > div > div#name_parent_child > div:nth-child(1)
+    ${vManagehdrTxt}=    Get Text    css=div.wrapper.ng-scope.page-content > div > div.ng-scope > nav > div > div.pull-right.navbar-right-block > div.pull-left > div > div > div#name_parent_child > div:nth-child(1)
+    Log    ${vManagehdrTxt}
+    #WAN_Edge_Summary
+    Log to console    *** WAN Edge Summary validation ***\n
+    Log    \n***// Validate WAN edge summary in vManage //***\n
+    ${wanedgeSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=#dashboard_connectionsSummary_WanEdge > div > div    120s
+    Log    ${wanedgeSt}
+    ${summaryCount}=    Run keyword if    '${wanedgeSt}'=='True'    Get Text    css=#dashboard_connectionsSummary_WanEdge_down_container
+    ${summaryName}=    Run keyword if    '${wanedgeSt}'=='True'    Get Text    css=#dashboard_connectionsSummary_WanEdge_total_count
+    Log Many    ${summaryCount}    ${summaryName}
+    Run Keyword And Continue On Failure    Should Be Equal    ${summaryCount}    ${edgeDevCount}    msg=WAN_Edge summary count
+    Run Keyword And Continue On Failure    Should Be Equal    ${summaryName}    WAN Edge    msg=summary name
+    Comment    Run Keyword And Continue On Failure    Should Be Equal    ${vManagehdrTxt}    Dashboard    ignore_case=True    msg=Check the availability of vManage Header
+    #Control_Status
+    Log to console    *** Control Status validation in vManage ***\n
+    Log    \n***// Validate Control staus Info in vManage //***\n
+    ${vManagectrlSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=#dashboard_controlStatus_title    90s
+    Log    ${vManagectrlSt}
+    ${vManagectrlhdrTxt}=    Run keyword if    '${vManagectrlSt}'=='True'    Get Text    css=#dashboard_controlStatus_title
+    Log    ${vManagectrlhdrTxt}
+    Run Keyword And Continue On Failure    Should Contain    ${vManagectrlhdrTxt}    Control Status    ignore_case=True    msg=Check the Control status header availability in vManage page
+    ${ctrlupHdrTxt}=    Run keyword if    '${vManagectrlSt}'=='True'    Get Text    css=#dashboard_controlStatus_Control_up > div > span.floatContentLeft
+    ${ctrlupcountTxt}=    Run keyword if    '${vManagectrlSt}'=='True'    Get Text    css=#dashboard_controlStatus_Control_up > div > span.floatContentRight
+    Log Many    ${ctrlupHdrTxt}    ${ctrlupcountTxt}
+    Log    \n***// Validate Control up header text in vManage //***\n
+    Run Keyword And Continue On Failure    should be equal    ${ctrlupHdrTxt}    Control Up    ignore_case=True    msg=Check the control up header text
+    Run Keyword And Continue On Failure    should be equal    ${ctrlupcountTxt}    ${ctrlUpcount}    msg=Check the control up count value
+    ${ctrlupClassname}=    Execute Javascript    var className = document.querySelectorAll('#dashboard_controlStatus_Control_up > div.statusBarContainer > span')[0].className; return className;
+    Log    ${ctrlupClassname}
+    ${flag1}=    Run Keyword And Return Status    should contain    ${ctrlupClassname}    statusBar    ignore_case=True    msg=Check classname of control up for getting its current status
+    ${flag2}=    Run Keyword And Return Status    should contain    ${ctrlupClassname}    up    ignore_case=True    msg=Check classname of control up for getting its Up or Down status
+    Log Many    ${flag1}    ${flag2}
+    ${ctrlupColorinfo}=    Run keyword if    '${flag1}'=='True' and '${flag2}'=='True'    Execute Javascript    var ctrlcolor = $('.statusBar.up').css("background-color"); return ctrlcolor;
+    Log    ${ctrlupColorinfo}
+    Log    \n***// Convert Control up data color to hexa format //***\n
+    ${colorinfoHex}=    Convert_RGB_To_Hex    ${ctrlupColorinfo}
+    Log    ${colorinfoHex}
+    Log    \n***// Validate Control up hexa color value with Green hexadecimal value //***\n
+    Run keyword and continue on failure    Should Be Equal    ${colorinfoHex}    \#00AB50    ignore_case=True
+    Log to console    *** Menu Items in vManage ***\n
+    Log    \n***// Check and click side menu items in vManage //***\n
+    ${clickmenuItems}=    Run Keyword And Return Status    Click Element    css=div.wrapper.ng-scope.page-content > div > div.ng-scope > nav > ul > li > a#topnav_menu_collapse_slider
+    Log    ${clickmenuItems}
+    Run Keyword And Continue On Failure    Should Be True    ${clickmenuItems}
+    Run Keyword if    '${clickmenuItems}'=='True'    Capture Element Screenshot    css=div.wrapper.ng-scope.page-content > div > nav > div > nav > ul
+    #Slidemenu_userprofile
+    Log    \n***// Validate userprofile in slide menu //***\n
+    ${userprofSt}=    Run Keyword And Return Status    Page Should Contain Element    css=nav.sidebar > div > a#userName > span
+    Log    ${userprofSt}
+    Run Keyword if    '${userprofSt}'=='True'    Capture Element Screenshot    css=nav.sidebar > div > a#userName > span
+    Log    \n***// Click userprofile element in slide menu //***\n
+    Run Keyword if    '${userprofSt}'=='True'    Click Element    css=nav.sidebar > div > a#userName > span
+    sleep    2s
+    #Temp_Fix
+    ${responseerrSt}=    Run Keyword And Return Status    Page Should Contain Element    css=#notification-close > i
+    Log    ${responseerrSt}
+    Run keyword if    '${responseerrSt}'=='True'    Click Element    css=#notification-close > i
+    #Profile_info_validate
+    ${profinfoSt}=    Run Keyword And Return Status    Page Should Contain Element    css=div.wrapper.ng-scope.page-content > div > section > div > div.layout-fill.layout-wrap.ng-scope.layout-row > div > h2
+    Log    ${profinfoSt}
+    ${profinfohdrTxt}=    Run keyword if    '${profinfoSt}'=='True'    Get Text    css=div.wrapper.ng-scope.page-content > div > section > div > div.layout-fill.layout-wrap.ng-scope.layout-row > div > h2
+    Run Keyword And Continue On Failure    Should Be Equal    ${profinfohdrTxt}    Profile Information    ignore_case=True    msg=Verify user profile header
+    ${profileDict}=    Execute Javascript    var rowelement = document.querySelectorAll('div.wrapper.ng-scope.page-content > div > section > div > div.layout-fill.layout-wrap.layout-row > div')[0].children; var len = rowelement.length; var newdict = {}; for (i=3; i<len; i++){ \    if (i==7){ \    \    var name = document.querySelectorAll("div.wrapper.ng-scope.page-content > div > section > div > div.layout-fill.layout-wrap.layout-row > div > div:nth-child("+ i +") > \ div.profile-title")[0].innerText; \    \    var value = document.querySelectorAll("div.wrapper.ng-scope.page-content > div > section > div > div.layout-fill.layout-row > div > div:nth-child("+ i +") > span.profile-values")[0].innerText; \    } else { \    \    var name = document.querySelectorAll("div.wrapper.ng-scope.page-content > div > section > div > div.layout-fill.layout-wrap.layout-row > div > div:nth-child("+ i +") > \ div.profile-title")[0].innerText; \    \    var value = document.querySelectorAll("div.wrapper.ng-scope.page-content > div > section > div > div.layout-fill.layout-row > div > div:nth-child("+ i +") > div.profile-values")[0].innerText; \    } \    newdict[name] = value;    \ } return newdict;
+    Log    ${profileDict}
+    Log    \n***// Validate username and group profile of User //***\n
+    Run Keyword And Continue On Failure    Should Be Equal    ${profileDict}[Username]    ${Msx_uname}    ignore_case=True    msg=Validate username in Profile info
+    Run Keyword And Continue On Failure    Should Be Equal    ${profileDict}[Groups]    basic_naas    ignore_case=True    msg=Validate groups in Profile info
+    Capture Page Screenshot
+    #Back_to_Dashboard
+    Log    \n***// Switch back to Dashboard page //***\n
+    ${clkbckmenuItems}=    Run Keyword And Return Status    Click Element    css=div.wrapper.ng-scope.page-content > div > div.ng-scope > nav > ul > li > a#topnav_menu_collapse_slider
+    Log    ${clkbckmenuItems}
+    sleep    2s
+    ${dashbrdsidebrSt}=    Run Keyword And Return Status    Page Should Contain Element    css=#sidebar_menu_dashboard > span
+    Log    ${dashbrdsidebrSt}
+    Run keyword if    '${dashbrdsidebrSt}'=='True'    Click Element    css=#sidebar_menu_dashboard > span
+    sleep    2s
+    ${maindashbrdsidebrSt}=    Run Keyword And Return Status    Page Should Contain Element    css=#sidebar_submenu_dashboard > span
+    Log    ${maindashbrdsidebrSt}
+    Log    \n***// Main Dashboard page //***\n
+    Run keyword if    '${maindashbrdsidebrSt}'=='True'    Click Element    css=#sidebar_submenu_dashboard > span
+    sleep    3s
+    Capture Page Screenshot
+    Close Window
+    [Teardown]
+
+MsxPortal_vManageGetdevCount
+    [Documentation]    [*** vManage redirect from Msx Portal ***]
+    ...
+    ...     \ \ i) \ Login to Msx portal
+    ...    	\
+    ...     ii) Get SDWAN portal after setup infrastructure in Msx portal
+    ...    	\
+    ...    iii) Click SDWAN portal URL for getting redirected to vManage portal
+    ...    	\
+    ...    iv) Get WAN Edge summary count from vManage portal.
+    ...    	\
+    ...    v) Close vManage portal window and Logout of Msx portal.
+    ${rdmValue}=    Evaluate    random.randint(1,100)    random
+    Log    ${rdmValue}
+    ${range}=    Evaluate    range(0,12)
+    Log    ${range}
+    #Validate_MsxPortal_Header
+    Log to console    *** Msx Portal Header Check ***\n
+    Log    \n***// Validate Msx Portal Header //***\n
+    ${homepg_Hdr}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.ng-scope > div > div > msx-masthead > div > div > div > div.sk-masthead-flex > span.sk-masthead-title-area > span    120s
+    Log    ${homepg_Hdr}
+    Maximize Browser Window
+    sleep    2s
+    Run Keyword And Ignore Error    Execute Javascript    window.scrollTo(0,290);
+    sleep    2s
+    #Temp_Fix
+    ${setupInfra_St}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title    120s
+    Comment    ${setupInfra_St}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Log    ${setupInfra_St}
+    should be True    ${setupInfra_St}
+    ${setupInfraHdrTxt}=    Get Text    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Log    ${setupInfraHdrTxt}
+    Run Keyword And Continue On Failure    Should Be Equal    ${setupInfraHdrTxt}    SD-WAN    msg=Check setup Infra header text    ignore_case=True
+    Log to console    *** Check Infra Status ***\n
+    Log    \n***// Check Infra availability status in Services tab //***\n
+    ${infradeploySt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button    120s
+    Comment    ${infradeploySt}=    Run Keyword And Return Status    Page Should Contain Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
+    Run keyword if    '${infradeploySt}'=='False'    Click Element    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Run Keyword And Continue On Failure    Page Should Contain Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
+    ${infraCompletionTxt}=    Get Text    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
+    Log    ${infraCompletionTxt}
+    Run Keyword And Continue On Failure    Should Be Equal    ${infraCompletionTxt}    SD-WAN PORTAL    msg=Check SD-WAN Portal for redirecting to vManage    ignore_case=True
+    #Redirecting_to_vManage
+    Log to console    *** Redirect to vManage Portal ***\n
+    Log    \n***// Redirecting to vManage portal from Msx portal //***\n
+    Run keyword if    '${infradeploySt}'=='True'    Click Element    css=sdwan-service-details > div > sdwan-as-service-details > div > div > div > sdwan-aas-cross-launch > div > div.center-buttons > button
+    sleep    15s
+    Switch Window    New
+    Log    \n***// Validate vManage portal Header //***\n
+    ${vManagehdrSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.wrapper.ng-scope.page-content > div > div.ng-scope > nav > div > div.pull-right.navbar-right-block > div.pull-left > div > div > div#name_parent_child > div:nth-child(1)    120s
+    Log    ${vManagehdrSt}
+    Run keyword unless    '${vManagehdrSt}'=='True'    Wait Until Page Contains Element    css=div.wrapper.ng-scope.page-content > div > div.ng-scope > nav > div > div.pull-right.navbar-right-block > div.pull-left > div > div > div#name_parent_child > div:nth-child(1)
+    ${vManagehdrTxt}=    Get Text    css=div.wrapper.ng-scope.page-content > div > div.ng-scope > nav > div > div.pull-right.navbar-right-block > div.pull-left > div > div > div#name_parent_child > div:nth-child(1)
+    Log    ${vManagehdrTxt}
+    #WAN_Edge_Summary
+    Log to console    *** WAN Edge Summary validation ***\n
+    Log    \n***// Validate WAN edge summary in vManage //***\n
+    ${wanedgeSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=#dashboard_connectionsSummary_WanEdge > div > div    120s
+    Log    ${wanedgeSt}
+    ${summaryCount}=    Run keyword if    '${wanedgeSt}'=='True'    Get Text    css=#dashboard_connectionsSummary_WanEdge_down_container
+    ${summaryName}=    Run keyword if    '${wanedgeSt}'=='True'    Get Text    css=#dashboard_connectionsSummary_WanEdge_total_count
+    Log Many    ${summaryCount}    ${summaryName}
+    Log    \n***// Get WAN Edge summary count from vManage //***\n
+    ${deviceCount}=    Convert To Integer    ${summaryCount}
+    Log    ${deviceCount}
+    Capture Page Screenshot
+    Close Window
+    [Teardown]
+    [Return]    ${deviceCount}
+
+Convert_RGB_To_Hex
+    [Arguments]    ${rgbInput}
+    [Documentation]    [*** Convert RGB value into Hexa decimal value ***]
+    Log    ${rgbInput}
+    Log to console    *** Converting RGB to Hexadecimal Format ***\n
+    Log    \n***// Converts RGB value to Hexadecimal value //***\n
+    ${b}=    Strip String    ${rgbInput}    characters=rgb()
+    Log Many    ${b}
+    ${c}=    Split String    ${b}    ,
+    ${e}=    Set Variable    \#
+    FOR    ${i}    IN    @{c}
+        ${d}=    Convert To Hex    ${i}    length=2
+        ${e}=    Set Variable    ${e}${d}
+    END
+    ${hexOutput}=    Set Variable    ${e}
+    [Return]    ${hexOutput}
+
+MsxPortal_Devices
+    [Documentation]    [*** Devices info of Msx Portal ***]
+    ...
+    ...     \ i) \ Login to Msx portal
+    ...
+    ...    ii) Get Devices count from services tab of Msx portal.
+    ...
+    ...    iii) Click devices info of services and get redirected to Devices tab.
+    ...
+    ...    iv) Based on devices count in services tab, get each device info and validate its devicename, model, serialnum, lastupdate info.
+    ...
+    ...    v) \ Logout of Msx portal.
+    ${DeviceRange}=    Evaluate    list(range(1,500))
+    Log    ${DeviceRange}
+    Log to console    *** Msx Portal Devices ***\n
+    Log    \n***// Get devices count of current subscription in service page //***\n
+    ${deviceCount}=    MsxPortal_GetdevicesCount
+    Log    ${deviceCount}
+    List Should Contain Value    ${DeviceRange}    ${deviceCount}
+    ${range}=    Evaluate    ${deviceCount}+2
+    Log    ${range}
+    ${deviceviewSt}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div.status-panel-view-all-link
+    Log to console    *** Switch to Devices Tab ***\n
+    Log    \n***// Switch to Devices tab from Services page //***\n
+    Run keyword if    '${deviceviewSt}'=='True'    Click Element    css=msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div.status-panel-view-all-link
+    ${devicepghdrSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=msx-devices-workspace > div.tenant-workspace-header > msx-title-toolbar > div.msx-title-toolbar-title
+    Log    \n***// Fetch and Validate Devices header //***\n
+    ${devicepghdrTxt}=    Run keyword if    '${devicepghdrSt}'=='True'    Get Text    css=msx-devices-workspace > div.tenant-workspace-header > msx-title-toolbar > div.msx-title-toolbar-title
+    Log    ${devicepghdrTxt}
+    Run Keyword And Continue On Failure    Should Contain    ${devicepghdrTxt}    Devices    ignore_case=True    msg=Check device tab header
+    Log to console    *** Fetch and Validate each Devices info ***\n
+    Log    \n***// Fetch and Validate Each Devices info based on Device count in services Tab //***\n
+    FOR    ${i}    IN RANGE    2    ${range}
+        Log    ${i}
+        Log    \n***// Create Css path of each device //***\n
+        ${devLogocss}=    Set Variable    msx-devices-workspace > div.tile-panel > msx-device-list > div > msx-grid > div > div.dgrid-scroller > div.dgrid-content > div:nth-child(${i}) > table > tr > td.dgrid-column-1 > div
+        Log Many    ${devLogocss}
+        Run Keyword And Ignore Error    Execute Javascript    window.scrollTo(0,290);
+        Log    \n***//Wait for the vailability of Devices //***\n
+        ${devicetableSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=msx-devices-workspace > div.tile-panel > msx-device-list > div > msx-grid > div > div.dgrid-scroller > div.dgrid-content > div > table    120s
+        Log    ${devicetableSt}
+        Capture Page Screenshot
+        ${devhubSt}=    Run Keyword And Return Status    Page Should Contain Element    css=${devLogocss}
+        Log    ${devhubSt}
+        Run keyword if    '${devhubSt}'=='True'    Click Element    css=${devLogocss}
+        sleep    2s
+        Log    \n***// Fetch each Device info //***\n
+        ${deviceStatus}    ${deviceInfo}=    MsxPortal_GetdeviceInfo
+        Log Many    ${deviceStatus}    ${deviceInfo}
+        Log    \n***// Validate each Device info in Device tab //***\n
+        Run Keyword And Continue On Failure    MsxPortal_ValidatedevInfo    ${deviceStatus}    ${deviceInfo}
+    END
+    [Teardown]
+
+MsxPortal_GetdevicesCount
+    [Documentation]    [*** Get Devices count \ of Msx Portal ***]
+    ...
+    ...
+    ...    * \ Get Devices count from services tab of Msx portal.
+    ...
+    ${rdmValue}=    Evaluate    random.randint(1,100)    random
+    Log    ${rdmValue}
+    ${range}=    Evaluate    range(0,12)
+    Log    ${range}
+    #Validate_MsxPortal_Header
+    Log to console    *** Msx Portal Header Check ***\n
+    Log    \n***// Validate Msx Portal Header //***\n
+    ${homepg_Hdr}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.ng-scope > div > div > msx-masthead > div > div > div > div.sk-masthead-flex > span.sk-masthead-title-area > span    120s
+    Log    ${homepg_Hdr}
+    Maximize Browser Window
+    sleep    2s
+    Run Keyword And Ignore Error    Execute Javascript    window.scrollTo(0,290);
+    sleep    2s
+    Log    \n***// Validate Setup Infra of Msx Portal Header //***\n
+    ${setupInfra_St}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Log    ${setupInfra_St}
+    should be True    ${setupInfra_St}
+    ${setupInfraHdrTxt}=    Get Text    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Log    ${setupInfraHdrTxt}
+    Log    \n***// Validate Header text of setup Infrastructure //***\n
+    Run Keyword And Continue On Failure    Should Be Equal    ${setupInfraHdrTxt}    SD-WAN    msg=Check setup Infra header text    ignore_case=True
+    Log to console    *** Check Devices info from Services \ ***\n
+    Log    \n***// Check Devices info from services tab //***\n
+    ${devicesSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.metric-status-tile-details-zone > sdwan-service-details > div > div > msx-devices-status-panel-tile > div > msx-status-panel-tile > div    120s
+    Log    ${devicesSt}
+    Capture Element Screenshot    css=div.metric-status-tile-details-zone > sdwan-service-details > div > div > msx-devices-status-panel-tile > div > msx-status-panel-tile > div
+    ${deviceinfoSt}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div > div.status-instance > div.status-instance-name
+    Log    ${deviceinfoSt}
+    ${devicesStTxt}=    Run keyword if    '${deviceinfoSt}'=='True'    Get Text    css=msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div > div.status-instance > div.status-instance-name
+    Log    \n***// Check Devices status from services tab //***\n
+    Run Keyword And Continue On Failure    Should Be Equal    ${devicesStTxt}    Good    ignore_case=True    msg=Check devices status in service tab
+    ${devicescntSt}=    Run Keyword And Return Status    Page Should Contain Element    css=div.metric-status-tile-details-zone.ng-scope > sdwan-service-details > div > div > msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div.status-panel-title
+    Log    ${devicescntSt}
+    Should Be True    ${devicescntSt}    msg=Device count element should be available
+    Log    \n***// Get Devices count from services tab //***\n
+    ${devicescntTxt}=    Get Text    css=div.metric-status-tile-details-zone.ng-scope > sdwan-service-details > div > div > msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div.status-panel-title
+    Log    ${devicescntTxt}
+    ${devicesvldSt}=    Run Keyword And Return Status    Should Contain    ${devicescntTxt}    DEVICE    ignore_case=True
+    Log    ${devicesvldSt}
+    ${splitStr}=    Run keyword if    '${devicesvldSt}'=='True'    Split String    ${devicescntTxt}    ${SPACE}
+    Log    ${splitStr}
+    ${count}=    Convert To Integer    ${splitStr[0]}
+    Log    ${count}
+    [Teardown]
+    [Return]    ${count}
+
+MsxPortal_GetdeviceInfo
+    [Documentation]    [*** Get each Devices info of Msx Portal ***]
+    ...
+    ...    * Get each device info and validate its status, devicename, servicename, model, serialnum, lastupdate info.
+    ...
+    Log to console    *** Get devices info from Device Tab ***\n
+    Log    \n***// Fetch devices info from Device tab //***\n
+    ${onboardSt}=    Run Keyword And Return Status    Page Should Contain Element    css=div.msx-device-at-a-glance-tile-wrapper__right-section--header > msx-device-status-panel > div > msx-multi-ball-status-tile > div > div > div.vms-multi-ball-status-tile-section-subtitle
+    Log    ${onboardSt}
+    Log    \n***// Fetch and Check the Onboard status of each device //***\n
+    ${onboardTxt}=    Get Text    css=div.msx-device-at-a-glance-tile-wrapper__right-section--header > msx-device-status-panel > div > msx-multi-ball-status-tile > div > div > div.vms-multi-ball-status-tile-section-subtitle
+    Run Keyword And Continue On Failure    Should Be Equal    ${onboardTxt}    Onboarded    ignore_case=True    msg=Check the onboard status of each devices
+    Log    \n***// Check the device hub status of Edge devices //***\n
+    ${devicehubSt}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__left-section > div
+    Log    ${devicehubSt}
+    Run Keyword And Ignore Error    Capture Element Screenshot    css=msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__left-section > div
+    Log    \n***// Get each device status info //***\n
+    ${deviceStatus}=    Run Keyword If    '${devicehubSt}'=='True'    Execute Javascript    var len = document.querySelectorAll('msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__left-section > div')[0].childElementCount; var devList = ["Devicename", "Status", "Model", "Type", "Service"]; var devSt= {}; var j = 0; for (i=2; i<len+1; i++){ \	if(i==2){ \	\	var devName = document.querySelectorAll("msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__left-section > div > div:nth-child("+ i +")")[0].innerText; \	\	devSt[devList[j]]=devName;	\ \	} else { \	\	var value = document.querySelectorAll("msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__left-section > div > div:nth-child("+ i +") > div")[0].innerText; \	\	devSt[devList[j]] = value; \	} \	j++; } return devSt;
+    Log    ${deviceStatus}
+    ${deviceinfoSt}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__right-section > div
+    Log    ${deviceinfoSt}
+    Run Keyword And Ignore Error    Capture Element Screenshot    css=msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__right-section > div
+    Log    \n***// Get each device info //***\n
+    ${deviceInfo}=    Run Keyword If    '${deviceinfoSt}'=='True'    Execute Javascript    var len = document.querySelectorAll('msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__right-section > div > div.msx-device-at-a-glance-tile-wrapper__right-section--prop-container')[0].childElementCount; var devList = ["Devicename", "Serialnumber", "DeviceModel", "Lastupdate"]; var devSt= {}; var j = 0; for (i=1; i<len+1; i++){ \	var value = document.querySelectorAll("msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__right-section > div > div.msx-device-at-a-glance-tile-wrapper__right-section--prop-container > div:nth-child("+ i +") > div:nth-child(2)")[0].innerText;; \	devSt[devList[j]] = value; \	j++; } return devSt;
+    Log    ${deviceInfo}
+    #Click_DeviceDetails
+    Run keyword and ignore error    Execute Javascript    window.scrollTo(0,document.body.scrollHeight);
+    sleep    1s
+    Log    \n***// Check Devicedetails button availability and click \ Element //***\n
+    ${DevdetailsSt}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-device-at-a-glance-tile > div.button-bar > button.msx-device-details-open-button
+    Log    ${DevdetailsSt}
+    Run keyword if    '${DevdetailsSt}'=='True'    Click Element    css=msx-device-at-a-glance-tile > div.button-bar > button.msx-device-details-open-button
+    sleep    3s
+    Capture Page Screenshot
+    #SwitchbackTodevices
+    Log    \n***// Switchback to Devices main Tab//***\n
+    ${devtabClk}=    Run Keyword And Return Status    Click Element    css=#vms_tenant_workspace_devices
+    Return From Keyword    ${deviceStatus}    ${deviceInfo}
+    [Teardown]
+
+MsxPortal_ValidatedevInfo
+    [Arguments]    ${deviceSt}    ${deviceInfo}
+    [Documentation]    [*** Validate Each Device info of Msx Portal ***]
+    ...
+    ...     * Validate each device status and its info
+    Log Many    ${deviceSt}    ${deviceInfo}
+    ${hubdevModel}=    Set Variable    vedge-C8000V
+    Log    ${hubdevModel}
+    Log to console    *** Validate each devices info in Device Tab***\n
+    Log    \n***// Validate the fetched devices info in Device Tab //***\n
+    #Validate_Device_Status
+    ${hubSt}=    Run Keyword And Return Status    Should Match Regexp    ${deviceSt}[Devicename]    hub-\\d+    msg=Check whether its hub device of Infra
+    Log    ${hubSt}
+    Log    \n***// Validate the hub and branch devicename //***\n
+    Run keyword if    '${hubSt}'=='True'    Run Keyword And Continue On Failure    Should Contain    ${deviceSt}[Devicename]    hub    ignore_case=True    msg=Check whether its hub device of Infra
+    Run keyword if    '${hubSt}'=='False'    Run Keyword And Continue On Failure    Should Contain    ${deviceSt}[Devicename]    branch    ignore_case=True    msg=Check whether its branch device of Infra
+    Log    \n***// Validate the device model of Hub device //***\n
+    Run keyword if    '${hubSt}'=='True'    Run Keyword And Continue On Failure    Should Be Equal    ${deviceSt}[Model]    ${hubdevModel}    ignore_case=True    msg=Verify the hub device model
+    Log    \n***// Validate the service name of the device //***\n
+    Run Keyword And Continue On Failure    Should Be Equal    ${deviceSt}[Service]    SD-WAN    ignore_case=True    msg=Verify service name of device
+    Log    \n***// Validate the device status //***\n
+    Run Keyword And Continue On Failure    Should Be Equal    ${deviceSt}[Status]    Good    ignore_case=True    msg=Verify device status
+    Log    \n***// Validate the device type //***\n
+    Run Keyword And Continue On Failure    Should Be Equal    ${deviceSt}[Type]    Cisco SD-WAN    ignore_case=True    msg=Verify device type
+    #Validate_Device_Info
+    Log    \n***// Validate the devicename in Info section //***\n
+    Run Keyword And Continue On Failure    Should Be Equal    ${deviceSt}[Devicename]    ${deviceInfo}[Devicename]    ignore_case=True    msg=Both the device name should be same
+    Log    \n***// Validate the Model in Info section //***\n
+    Run Keyword And Continue On Failure    Should Be Equal    ${deviceSt}[Model]    ${deviceInfo}[DeviceModel]    ignore_case=True    msg=Both the device model should be same
+    Log    \n***// Validate the serialnumber in Info section //***\n
+    Run Keyword And Continue On Failure    Should Not Be Empty    ${deviceInfo}[Serialnumber]
+    Log    \n***// Validate the Lastupdate time in Info section //***\n
+    Run Keyword And Continue On Failure    Should Not Be Empty    ${deviceInfo}[Lastupdate]
+    [Teardown]
+
+MsxPortal_Devices_tmp
+    ${rdmValue}=    Evaluate    random.randint(1,100)    random
+    Log    ${rdmValue}
+    ${range}=    Evaluate    range(0,12)
+    Log    ${range}
+    #Validate_MsxPortal_Header
+    Log to console    *** Msx Portal Header Check ***\n
+    Log    \n***// Validate Msx Portal Header //***\n
+    ${homepg_Hdr}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.ng-scope > div > div > msx-masthead > div > div > div > div.sk-masthead-flex > span.sk-masthead-title-area > span    120s
+    Log    ${homepg_Hdr}
+    Maximize Browser Window
+    sleep    2s
+    Run Keyword And Ignore Error    Execute Javascript    window.scrollTo(0,290);
+    sleep    2s
+    ${setupInfra_St}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Log    ${setupInfra_St}
+    should be True    ${setupInfra_St}
+    ${setupInfraHdrTxt}=    Get Text    css=msx-metric-status-tile > div > div.metric-collapsed-zone > div.metric-status-tile-text-wrapper > div.metric-status-tile-text-title
+    Log    ${setupInfraHdrTxt}
+    Run Keyword And Continue On Failure    Should Be Equal    ${setupInfraHdrTxt}    SD-WAN    msg=Check setup Infra header text    ignore_case=True
+    Log to console    *** Check Devices info from Services \ ***\n
+    Log    \n***// Check Devices info from services tab //***\n
+    ${devicesSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=div.metric-status-tile-details-zone > sdwan-service-details > div > div > msx-devices-status-panel-tile > div > msx-status-panel-tile > div
+    Log    ${devicesSt}
+    Capture Element Screenshot    css=div.metric-status-tile-details-zone > sdwan-service-details > div > div > msx-devices-status-panel-tile > div > msx-status-panel-tile > div
+    ${deviceinfoSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div > div.status-instance > div.status-instance-name    120s
+    Log    ${deviceinfoSt}
+    ${devicesStTxt}=    Run keyword if    '${deviceinfoSt}'=='True'    Get Text    css=msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div > div.status-instance > div.status-instance-name
+    Run Keyword And Continue On Failure    Should Be Equal    ${devicesStTxt}    Good    ignore_case=True    msg=Check devices status in service tab
+    ${deviceviewSt}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div.status-panel-view-all-link
+    Run keyword if    '${deviceviewSt}'=='True'    Click Element    css=msx-devices-status-panel-tile > div > msx-status-panel-tile > div > div.status-panel-view-all-link
+    ${devicepghdrSt}=    Run Keyword And Return Status    Wait Until Page Contains Element    css=msx-devices-workspace > div.tenant-workspace-header > msx-title-toolbar > div.msx-title-toolbar-title
+    ${devicepghdrTxt}=    Run keyword if    '${devicepghdrSt}'=='True'    Get Text    css=msx-devices-workspace > div.tenant-workspace-header > msx-title-toolbar > div.msx-title-toolbar-title
+    Log    ${devicepghdrTxt}
+    Run Keyword And Continue On Failure    Should Contain    ${devicepghdrTxt}    Devices    ignore_case=True    msg=Check device tab header
+    sleep    20s
+    Run Keyword And Ignore Error    Execute Javascript    window.scrollTo(0,290);
+    Capture Page Screenshot
+    ${devhubSt}=    Run Keyword And Return Status    Page Should Contain Element    css=table > tr > td.dgrid-column-1.field-status.msx-device-status-column > div
+    Log    ${devhubSt}
+    Run keyword if    '${devhubSt}'=='True'    Click Element    css=table > tr > td.dgrid-column-1.field-status.msx-device-status-column > div
+    sleep    2s
+    ${onboardSt}=    Run Keyword And Return Status    Page Should Contain Element    css=div.msx-device-at-a-glance-tile-wrapper__right-section--header > msx-device-status-panel > div > msx-multi-ball-status-tile > div > div > div.vms-multi-ball-status-tile-section-subtitle
+    Log    ${onboardSt}
+    ${devicehubSt}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__left-section > div
+    Log    ${devicehubSt}
+    ${deviceStatus}=    Run Keyword If    '${devicehubSt}'=='True'    Execute Javascript    var len = document.querySelectorAll('msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__left-section > div')[0].childElementCount; var devList = ["Devicename", "Status", "Model", "Type", "Service"]; var devSt= {}; var j = 0; for (i=2; i<len+1; i++){ \	if(i==2){ \	\	var devName = document.querySelectorAll("msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__left-section > div > div:nth-child("+ i +")")[0].innerText; \	\	devSt[devList[j]]=devName;	\ \	} else { \	\	var value = document.querySelectorAll("msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__left-section > div > div:nth-child("+ i +") > div")[0].innerText; \	\	devSt[devList[j]] = value; \	} \	j++; } return devSt;
+    Log    ${deviceStatus}
+    ${deviceinfoSt}=    Run Keyword And Return Status    Page Should Contain Element    css=msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__right-section > div
+    Log    ${deviceinfoSt}
+    ${deviceInfo}=    Run Keyword If    '${deviceinfoSt}'=='True'    Execute Javascript    var len = document.querySelectorAll('msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__right-section > div > div.msx-device-at-a-glance-tile-wrapper__right-section--prop-container')[0].childElementCount; var devList = ["Devicename", "Serialnumber", "DeviceModel", "Lastupdate"]; var devSt= {}; var j = 0; for (i=1; i<len+1; i++){ \	var value = document.querySelectorAll("msx-device-at-a-glance-tile > div.msx-device-at-a-glance-tile-wrapper > div.msx-device-at-a-glance-tile-wrapper__right-section > div > div.msx-device-at-a-glance-tile-wrapper__right-section--prop-container > div:nth-child("+ i +") > div:nth-child(2)")[0].innerText;; \	devSt[devList[j]] = value; \	j++; } return devSt;
+    Log    ${deviceInfo}
+    sleep    6s
+    [Teardown]
